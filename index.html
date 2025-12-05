@@ -6,61 +6,1193 @@
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <link rel="stylesheet" href="./resources/ol.css">
-        <link rel="stylesheet" href="resources/fontawesome-all.min.css">
-        <link href="resources/photon-geocoder-autocomplete.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="./resources/ol-layerswitcher.css">
-        <link rel="stylesheet" href="./resources/qgis2web.css">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@300;400;600;700;800&display=swap" rel="stylesheet">
         <style>
-        html, body {
-            background-color: #ffffff;
+        :root {
+            --primary-green: #059669;
+            --primary-green-dark: #047857;
+            --secondary-blue: #0ea5e9;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --bg-dark: #0f172a;
+            --bg-medium: #1e293b;
+            --bg-light: #f8fafc;
+            --text-dark: #0f172a;
+            --text-light: #f1f5f9;
+            --text-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
         }
-        .ol-control > * {
-            background-color: #f8f8f8!important;
-            color: #444444!important;
-            border-radius: 0px;
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .ol-attribution a, .gcd-gl-input::placeholder, .search-layer-input-search::placeholder {
-            color: #444444!important;
-        }
-        .search-layer-input-search {
-            background-color: #f8f8f8!important;
-        }
-        .ol-control > *:focus, .ol-control >*:hover {
-            background-color: rgba(248, 248, 248, 0.7)!important;
-        } 
-        .ol-control {
-            background-color: rgba(255,255,255,.4) !important;
-            padding: 2px !important;
-        } 
-        </style>
-
-        <style>
+        
         html, body, #map {
             width: 100%;
             height: 100%;
-            padding: 0;
-            margin: 0;
+            font-family: 'Manrope', sans-serif;
+            background: var(--bg-light);
+        }
+        
+        /* Timeline Control - Ultra Compact */
+        #timeline-control {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.10);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 8px 16px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            z-index: 1000;
+            min-width: 340px;
+            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        #year-display {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 1px;
+        }
+        
+        #timeline-slider {
+            width: 100%;
+            height: 5px;
+            margin: 6px 0;
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(to right, 
+                var(--primary-green) 0%, 
+                var(--secondary-blue) 50%, 
+                var(--accent-orange) 100%);
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        #timeline-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 2px solid var(--primary-green);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+            transition: all 0.2s ease;
+        }
+        
+        #timeline-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.6);
+        }
+        
+        #timeline-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 2px solid var(--primary-green);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+            transition: all 0.2s ease;
+        }
+        
+        .timeline-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        
+        .timeline-buttons button {
+            padding: 6px 12px;
+            background: var(--primary-green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'Manrope', sans-serif;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .timeline-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: var(--primary-green-dark);
+        }
+        
+        .timeline-buttons button:active {
+            transform: translateY(0);
+        }
+        
+        .timeline-buttons button:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.6;
+        }
+        
+        #play-button {
+            background: linear-gradient(135deg, var(--secondary-blue), var(--primary-green));
+            font-weight: 700;
+        }
+        
+        #play-button:hover {
+            background: linear-gradient(135deg, #0284c7, var(--primary-green-dark));
+        }
+        
+        /* Analysis Panels - Left and Right */
+        .analysis-panel {
+            position: absolute;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--glass-border);
+            z-index: 999;
+            max-height: 420px;
+            overflow-y: auto;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .analysis-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .analysis-panel::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+        
+        .analysis-panel::-webkit-scrollbar-thumb {
+            background: var(--primary-green);
+            border-radius: 10px;
+        }
+        
+        #chart-panel {
+            bottom: 20px;
+            left: 20px;
+            width: 520px;
+            padding: 20px;
+            display: none;
+            animation: slideInLeft 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .panel-header {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid;
+            border-image: linear-gradient(90deg, var(--primary-green), var(--secondary-blue)) 1;
+            color: var(--text-dark);
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-item {
+            margin: 12px 0;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.05), rgba(14, 165, 233, 0.05));
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-green);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-sm);
+            border-left-color: var(--secondary-blue);
+        }
+        
+        .stat-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            font-family: 'Space Mono', monospace;
+        }
+        
+        .stat-change {
+            font-size: 11px;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+        
+        .positive {
+            color: var(--primary-green);
+        }
+        
+        .negative {
+            color: var(--accent-red);
+        }
+        
+        /* Toggle Buttons - Horizontal on sides */
+        .toggle-button {
+            position: absolute;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 12px 20px;
+            border-radius: 50px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'Manrope', sans-serif;
+            color: var(--text-dark);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .toggle-button:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            background: var(--primary-green);
+            color: white;
+        }
+        
+        .toggle-button:active {
+            transform: translateY(-2px);
+        }
+        
+        #toggle-chart {
+            bottom: 450px;
+            left: 20px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 650px) {
+            #timeline-control {
+                min-width: 90%;
+                left: 5%;
+                transform: none;
+                padding: 6px 12px;
+            }
+            
+            #year-display {
+                font-size: 18px;
+                margin-bottom: 4px;
+            }
+            
+            .timeline-buttons button {
+                padding: 5px 10px;
+                font-size: 10px;
+            }
+            
+            .analysis-panel {
+                width: 90% !important;
+                left: 5% !important;
+                right: auto !important;
+                max-height: 280px;
+            }
+            
+            #chart-panel {
+                bottom: 280px;
+            }
+            
+            .toggle-button {
+                padding: 10px 16px;
+                font-size: 12px;
+                bottom: 580px !important;
+            }
+            
+            #toggle-chart {
+                left: 10px;
+            }
+        }
+        
+        /* Custom Animations */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        
+        .loading {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         </style>
         <title>Intégration d’imageries géospatiales et de données collaboratives pour analyse du changement écologique</title>
     </head>
     <body>
         <div id="map">
-            <div id="popup" class="ol-popup">
-                <a href="#" id="popup-closer" class="ol-popup-closer"></a>
-                <div id="popup-content"></div>
+        </div>
+        
+        <!-- Boutons de toggle -->
+        <div id="toggle-chart" class="toggle-button" onclick="toggleChartPanel()">📈 Graphique</div>
+        
+        <!-- Panneau de graphique -->
+        <div id="chart-panel" class="analysis-panel">
+            <div class="panel-header">Évolution temporelle (1990-2023)</div>
+            <canvas id="evolutionChart" width="450" height="300"></canvas>
+        </div>
+        
+        <!-- Contrôle du curseur temporel -->
+        <div id="timeline-control">
+            <div id="year-display">1990</div>
+            <input type="range" id="timeline-slider" min="0" max="10" value="0" step="1">
+            <div class="timeline-buttons">
+                <button id="prev-button">◄ Précédent</button>
+                <button id="play-button">▶ Lecture auto</button>
+                <button id="next-button">Suivant ►</button>
             </div>
         </div>
-        <script src="resources/qgis2web_expressions.js"></script>
-        <script src="./resources/functions.js"></script>
-        <script src="./resources/ol.js"></script>
-        <script src="./resources/ol-layerswitcher.js"></script>
-        <script src="resources/photon-geocoder-autocomplete.min.js"></script>
-        <script src="layers/RNDGenappe_13.js"></script>
-        <script src="styles/RNDGenappe_13_style.js"></script>
-        <script src="./layers/layers.js" type="text/javascript"></script> 
-        <script src="./resources/Autolinker.min.js"></script>
-        <script src="./resources/qgis2web.js"></script>        
+        
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="data/RNDGenappe_13.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <script>
+        // Données statistiques extraites du document
+        var statsData = {
+            years: [1990, 2001, 2006, 2015, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
+            percentCover: [0.50, 0.87, 1.45, 3.69, 12.77, 18.53, 24.59, 31.03, 40.54, 54.78, 68.01],
+            numTrees: [312, 428, 615, 1243, 1876, 2134, 2487, 2756, 3012, 3234, 3418],
+            avgSize: [12.3, 15.7, 18.2, 22.9, 52.4, 66.9, 76.1, 86.7, 103.6, 130.4, 153.2],
+            surfaceCumulee: [3850, 6720, 11200, 28450, 98320, 142680, 189340, 238920, 312150, 421780, 523640]
+        };
+        
+        // Données ornithologiques (2010-2025)
+        var birdData = {
+            years: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
+            openSpecies: [18, 17, 19, 16, 15, 14, 13, 12, 11, 9, 8, 7, 6, 5],
+            forestSpecies: [12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 25, 27, 29, 31]
+        };
+        
+        // Fonction pour obtenir l'indice de l'année la plus proche
+        function getYearIndex(year) {
+            var distances = statsData.years.map(function(y) { return Math.abs(y - year); });
+            var minDistance = Math.min.apply(null, distances);
+            return distances.indexOf(minDistance);
+        }
+        
+        // Fonction pour obtenir les données ornithologiques pour une année
+        function getBirdDataForYear(year) {
+            var idx = birdData.years.indexOf(year);
+            if (idx === -1) return null;
+            return {
+                open: birdData.openSpecies[idx],
+                forest: birdData.forestSpecies[idx]
+            };
+        }
+        
+        // Fonction pour toggle le panneau de statistiques
+        // Fonction pour toggle le panneau de graphique
+        function toggleChartPanel() {
+            var panel = document.getElementById('chart-panel');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                if (!window.evolutionChartInstance) {
+                    createEvolutionChart();
+                }
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+        
+        // Fonction pour créer le graphique d'évolution
+        function createEvolutionChart() {
+            var ctx = document.getElementById('evolutionChart').getContext('2d');
+            
+            // Plugin personnalisé pour la ligne verticale de l'année active
+            var verticalLinePlugin = {
+                id: 'verticalLine',
+                afterDatasetsDraw: function(chart) {
+                    if (chart.options.plugins.verticalLine && chart.options.plugins.verticalLine.yearIndex !== undefined) {
+                        var ctx = chart.ctx;
+                        var yearIndex = chart.options.plugins.verticalLine.yearIndex;
+                        var xScale = chart.scales.x;
+                        var yScale = chart.scales.y1;
+                        
+                        var x = xScale.getPixelForValue(yearIndex);
+                        var topY = yScale.top;
+                        var bottomY = yScale.bottom;
+                        
+                        // Dessiner la ligne
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.moveTo(x, topY);
+                        ctx.lineTo(x, bottomY);
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = '#FF5722';
+                        ctx.setLineDash([5, 5]);
+                        ctx.stroke();
+                        
+                        // Ajouter un label avec l'année
+                        var year = statsData.years[yearIndex];
+                        ctx.fillStyle = '#FF5722';
+                        ctx.font = 'bold 12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(year, x, topY - 5);
+                        
+                        ctx.restore();
+                    }
+                }
+            };
+            
+            window.evolutionChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: statsData.years,
+                    datasets: [
+                        {
+                            label: 'Couverture arborée (%)',
+                            data: statsData.percentCover,
+                            borderColor: '#2196F3',
+                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Nombre d\'arbres (×10)',
+                            data: statsData.numTrees.map(function(v) { return v / 10; }),
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Richesse oiseaux ouverts',
+                            data: statsData.years.map(function(year) {
+                                var idx = birdData.years.indexOf(year);
+                                return idx !== -1 ? birdData.openSpecies[idx] : null;
+                            }),
+                            borderColor: '#FF9800',
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            yAxisID: 'y2',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            spanGaps: true,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Richesse oiseaux forestiers',
+                            data: statsData.years.map(function(year) {
+                                var idx = birdData.years.indexOf(year);
+                                return idx !== -1 ? birdData.forestSpecies[idx] : null;
+                            }),
+                            borderColor: '#8BC34A',
+                            backgroundColor: 'rgba(139, 195, 74, 0.1)',
+                            yAxisID: 'y2',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            spanGaps: true,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    animation: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Évolution de la fermeture et de l\'avifaune (1990-2023)',
+                            font: {
+                                size: 14
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 10
+                                },
+                                boxWidth: 12,
+                                padding: 8
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    var label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        if (context.dataset.label === 'Nombre d\'arbres (×10)') {
+                                            label += Math.round(context.parsed.y * 10) + ' arbres';
+                                        } else if (context.dataset.label.includes('oiseaux')) {
+                                            label += context.parsed.y + ' espèces';
+                                        } else {
+                                            label += context.parsed.y.toFixed(2) + '%';
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        verticalLine: {
+                            yearIndex: 0
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Année',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Couverture (%) / Arbres (×10)',
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            ticks: {
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        y2: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Richesse aviaire (nb espèces)',
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            ticks: {
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                },
+                plugins: [verticalLinePlugin]
+            });
+        }
+        
+        // Fonction pour mettre à jour la ligne verticale sur le graphique
+        function updateChartVerticalLine(yearIndex) {
+            if (window.evolutionChartInstance) {
+                var year = years[yearIndex];
+                var dataIdx = getYearIndex(year);
+                var chart = window.evolutionChartInstance;
+                
+                // Mettre à jour l'index de l'année pour le plugin
+                chart.options.plugins.verticalLine.yearIndex = dataIdx;
+                
+                // Redessiner seulement le plugin sans animation
+                chart.draw();
+            }
+        }
+        
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#00f8ff',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#00f8ff',
+                fillOpacity: 1
+              });
+            }
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[50.59666894055167,4.420231566130429],[50.60668409513563,4.4492651985598055]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    // Aggiorna il popup quando il video carica i metadati
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        var title = new L.Control({'position':'topleft'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>Intégration d’imageries géospatiales et de données collaboratives pour analyse du changement écologique</h2>';
+        };
+        title.addTo(map);
+        var abstract = new L.Control({'position':'topright'});
+        abstract.onAdd = function (map) {
+            this._div = L.DomUtil.create('div',
+            'leaflet-control abstract');
+            this._div.id = 'abstract'
+                this._div.setAttribute("onmouseenter", "abstract.show()");
+                this._div.setAttribute("onmouseleave", "abstract.hide()");
+                this.hide();
+                return this._div;
+            };
+            abstract.hide = function () {
+                this._div.classList.remove("abstractUncollapsed");
+                this._div.classList.add("abstract");
+                this._div.innerHTML = 'i'
+            }
+            abstract.show = function () {
+                this._div.classList.remove("abstract");
+                this._div.classList.add("abstractUncollapsed");
+                this._div.innerHTML = 'Cette cartographie examine les dynamiques spatio-temporelles de la Réserve Naturelle de Genappe, incluant les anciens bassins de décantation, au moyen d’une intégration multimodale d’imageries géospatiales et de données naturalistes collaboratives. Nous mobilisons un ensemble de sources complémentaires : <br />(i) un modèle de hauteur de canopée dérivé du HighResCanopyHeight (HRCH) pour quantifier les variations structurelles de la végétation ligneuse ;<br /> (ii) des orthophotographies historiques et contemporaines à haute résolution pour détecter les transitions phytosociologiques fines et les dynamiques de fermeture/ouverture du milieu ; et <br />Ces informations sont corrélées avec un corpus exhaustif d’observations naturalistes multi-taxons issues de dispositifs de science citoyenne (observations.be), couvrant la faune vertébrée et invertébrée ainsi que la flore et divers groupes indicateurs. L’analyse vise à évaluer les relations fonctionnelles entre les changements biophysiques détectés par télédétection et les réponses spatio-temporelles des assemblages d’espèces (abondance, fréquence, phénologie, distributions locales). Une attention particulière est portée aux espèces indicatrices des stades de succession, aux taxons sensibles aux modifications hydromorphologiques des anciens bassins, et aux groupes dépendants des structures fines de micro-habitats.<br />L’intégration analytique effectuée met en évidence des trajectoires de transformation contrastées, révélant des processus simultanés d’embroussaillement, de colonisation arborée et de dynamisme végétal différentiel au sein de la mosaïque d’habitats. Ce couplage entre télédétection haute résolution et données collaboratives offre un cadre méthodologique robuste pour la modélisation des changements écosystémiques et constitue un support décisif pour l’orientation des stratégies de gestion et de conservation au sein de la RND de Genappe.';
+        };
+        abstract.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+            map.setMaxBounds(map.getBounds());
+            map.setMinZoom(map.getZoom());
+        }
+        map.createPane('pane_OpenStreetMap_0');
+        map.getPane('pane_OpenStreetMap_0').style.zIndex = 400;
+        var layer_OpenStreetMap_0 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OpenStreetMap_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OpenStreetMap_0;
+        map.addLayer(layer_OpenStreetMap_0);
+        map.createPane('pane_CartoWebTOPOIGN_1');
+        map.getPane('pane_CartoWebTOPOIGN_1').style.zIndex = 401;
+        var img_CartoWebTOPOIGN_1 = 'data/CartoWebTOPOIGN_1.png';
+        var img_bounds_CartoWebTOPOIGN_1 = [[50.596668940973736,4.420231566502409],[50.60668409555726,4.449265198188937]];
+        var layer_CartoWebTOPOIGN_1 = new L.imageOverlay(img_CartoWebTOPOIGN_1,
+                                              img_bounds_CartoWebTOPOIGN_1,
+                                              {pane: 'pane_CartoWebTOPOIGN_1'});
+        bounds_group.addLayer(layer_CartoWebTOPOIGN_1);
+        map.addLayer(layer_CartoWebTOPOIGN_1);
+        map.createPane('pane_HeatMap2023_2');
+        map.getPane('pane_HeatMap2023_2').style.zIndex = 402;
+        var img_HeatMap2023_2 = 'data/HeatMap2023_2.png';
+        var img_bounds_HeatMap2023_2 = [[50.59719779341792,4.424833116191049],[50.60613352808209,4.444662654639743]];
+        var layer_HeatMap2023_2 = new L.imageOverlay(img_HeatMap2023_2,
+                                              img_bounds_HeatMap2023_2,
+                                              {pane: 'pane_HeatMap2023_2'});
+        bounds_group.addLayer(layer_HeatMap2023_2);
+        map.createPane('pane_HeatMap2022_3');
+        map.getPane('pane_HeatMap2022_3').style.zIndex = 403;
+        var img_HeatMap2022_3 = 'data/HeatMap2022_3.png';
+        var img_bounds_HeatMap2022_3 = [[50.59719760101331,4.42483314279637],[50.606134234685626,4.444662682626203]];
+        var layer_HeatMap2022_3 = new L.imageOverlay(img_HeatMap2022_3,
+                                              img_bounds_HeatMap2022_3,
+                                              {pane: 'pane_HeatMap2022_3'});
+        bounds_group.addLayer(layer_HeatMap2022_3);
+        map.createPane('pane_HeatMap2021_4');
+        map.getPane('pane_HeatMap2021_4').style.zIndex = 404;
+        var img_HeatMap2021_4 = 'data/HeatMap2021_4.png';
+        var img_bounds_HeatMap2021_4 = [[50.59719796956722,4.4248332011488465],[50.60613370424552,4.444662739687494]];
+        var layer_HeatMap2021_4 = new L.imageOverlay(img_HeatMap2021_4,
+                                              img_bounds_HeatMap2021_4,
+                                              {pane: 'pane_HeatMap2021_4'});
+        bounds_group.addLayer(layer_HeatMap2021_4);
+        map.createPane('pane_HeatMap2020_5');
+        map.getPane('pane_HeatMap2020_5').style.zIndex = 405;
+        var img_HeatMap2020_5 = 'data/HeatMap2020_5.png';
+        var img_bounds_HeatMap2020_5 = [[50.597197936862884,4.424833719474495],[50.60613367162921,4.444663258097208]];
+        var layer_HeatMap2020_5 = new L.imageOverlay(img_HeatMap2020_5,
+                                              img_bounds_HeatMap2020_5,
+                                              {pane: 'pane_HeatMap2020_5'});
+        bounds_group.addLayer(layer_HeatMap2020_5);
+        map.createPane('pane_HeatMap2019_6');
+        map.getPane('pane_HeatMap2019_6').style.zIndex = 406;
+        var img_HeatMap2019_6 = 'data/HeatMap2019_6.png';
+        var img_bounds_HeatMap2019_6 = [[50.59719793451623,4.42483318556994],[50.60613366919195,4.444662724090939]];
+        var layer_HeatMap2019_6 = new L.imageOverlay(img_HeatMap2019_6,
+                                              img_bounds_HeatMap2019_6,
+                                              {pane: 'pane_HeatMap2019_6'});
+        bounds_group.addLayer(layer_HeatMap2019_6);
+        map.createPane('pane_HeatMap2018_7');
+        map.getPane('pane_HeatMap2018_7').style.zIndex = 407;
+        var img_HeatMap2018_7 = 'data/HeatMap2018_7.png';
+        var img_bounds_HeatMap2018_7 = [[50.59719829819785,4.424832406341671],[50.606134033667594,4.4446633575721]];
+        var layer_HeatMap2018_7 = new L.imageOverlay(img_HeatMap2018_7,
+                                              img_bounds_HeatMap2018_7,
+                                              {pane: 'pane_HeatMap2018_7'});
+        bounds_group.addLayer(layer_HeatMap2018_7);
+        map.createPane('pane_HeatMap2017_8');
+        map.getPane('pane_HeatMap2017_8').style.zIndex = 408;
+        var img_HeatMap2017_8 = 'data/HeatMap2017_8.png';
+        var img_bounds_HeatMap2017_8 = [[50.59719779341792,4.424833116191049],[50.60613352808209,4.444662654639743]];
+        var layer_HeatMap2017_8 = new L.imageOverlay(img_HeatMap2017_8,
+                                              img_bounds_HeatMap2017_8,
+                                              {pane: 'pane_HeatMap2017_8'});
+        bounds_group.addLayer(layer_HeatMap2017_8);
+        map.createPane('pane_HeatMap2015_9');
+        map.getPane('pane_HeatMap2015_9').style.zIndex = 409;
+        var img_HeatMap2015_9 = 'data/HeatMap2015_9.png';
+        var img_bounds_HeatMap2015_9 = [[50.59719768323879,4.424832466338189],[50.606133418719786,4.444663417321843]];
+        var layer_HeatMap2015_9 = new L.imageOverlay(img_HeatMap2015_9,
+                                              img_bounds_HeatMap2015_9,
+                                              {pane: 'pane_HeatMap2015_9'});
+        bounds_group.addLayer(layer_HeatMap2015_9);
+        map.createPane('pane_HeatMap2006_10');
+        map.getPane('pane_HeatMap2006_10').style.zIndex = 410;
+        var img_HeatMap2006_10 = 'data/HeatMap2006_10.png';
+        var img_bounds_HeatMap2006_10 = [[50.59719793746897,4.424832753368432],[50.606133672998226,4.444663704512938]];
+        var layer_HeatMap2006_10 = new L.imageOverlay(img_HeatMap2006_10,
+                                              img_bounds_HeatMap2006_10,
+                                              {pane: 'pane_HeatMap2006_10'});
+        bounds_group.addLayer(layer_HeatMap2006_10);
+        map.createPane('pane_HeatMap2001_11');
+        map.getPane('pane_HeatMap2001_11').style.zIndex = 411;
+        var img_HeatMap2001_11 = 'data/HeatMap2001_11.png';
+        var img_bounds_HeatMap2001_11 = [[50.59719825024936,4.424832865326605],[50.60613398579706,4.444663816623503]];
+        var layer_HeatMap2001_11 = new L.imageOverlay(img_HeatMap2001_11,
+                                              img_bounds_HeatMap2001_11,
+                                              {pane: 'pane_HeatMap2001_11'});
+        bounds_group.addLayer(layer_HeatMap2001_11);
+        map.createPane('pane_HeatMap1990_12');
+        map.getPane('pane_HeatMap1990_12').style.zIndex = 412;
+        var img_HeatMap1990_12 = 'data/HeatMap1990_12.png';
+        var img_bounds_HeatMap1990_12 = [[50.59719821038739,4.42483337375548],[50.60613394509457,4.444662912427755]];
+        var layer_HeatMap1990_12 = new L.imageOverlay(img_HeatMap1990_12,
+                                              img_bounds_HeatMap1990_12,
+                                              {pane: 'pane_HeatMap1990_12'});
+        bounds_group.addLayer(layer_HeatMap1990_12);
+        function pop_RNDGenappe_13(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RNDGenappe_13_0() {
+            return {
+                pane: 'pane_RNDGenappe_13',
+                opacity: 1,
+                color: 'rgba(227,26,28,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 3.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(164,113,88,0.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RNDGenappe_13');
+        map.getPane('pane_RNDGenappe_13').style.zIndex = 413;
+        map.getPane('pane_RNDGenappe_13').style['mix-blend-mode'] = 'normal';
+        var layer_RNDGenappe_13 = new L.geoJson(json_RNDGenappe_13, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RNDGenappe_13',
+            layerName: 'layer_RNDGenappe_13',
+            pane: 'pane_RNDGenappe_13',
+            onEachFeature: pop_RNDGenappe_13,
+            style: style_RNDGenappe_13_0,
+        });
+        bounds_group.addLayer(layer_RNDGenappe_13);
+        map.addLayer(layer_RNDGenappe_13);
+        var overlaysTree = [
+            {label: '<img src="legend/RNDGenappe_13.png" /> RND Genappe', layer: layer_RNDGenappe_13},
+            {label: "HeatMap - 1990", layer: layer_HeatMap1990_12},
+            {label: "HeatMap - 2001", layer: layer_HeatMap2001_11},
+            {label: "HeatMap - 2006", layer: layer_HeatMap2006_10},
+            {label: "HeatMap - 2015", layer: layer_HeatMap2015_9},
+            {label: "HeatMap - 2017", layer: layer_HeatMap2017_8},
+            {label: "HeatMap - 2018", layer: layer_HeatMap2018_7},
+            {label: "HeatMap - 2019", layer: layer_HeatMap2019_6},
+            {label: "HeatMap - 2020", layer: layer_HeatMap2020_5},
+            {label: "HeatMap - 2021", layer: layer_HeatMap2021_4},
+            {label: "HeatMap - 2022", layer: layer_HeatMap2022_3},
+            {label: "HeatMap - 2023", layer: layer_HeatMap2023_2},
+            {label: "CartoWeb - TOPO IGN", layer: layer_CartoWebTOPOIGN_1},
+            {label: "OpenStreetMap", layer: layer_OpenStreetMap_0, radioGroup: 'bm' },]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: false, 
+        });
+        lay.addTo(map);
+		document.addEventListener("DOMContentLoaded", function() {
+            // set new Layers List height which considers toggle icon
+            function newLayersListHeight() {
+                var layerScrollbarElement = document.querySelector('.leaflet-control-layers-scrollbar');
+                if (layerScrollbarElement) {
+                    var layersListElement = document.querySelector('.leaflet-control-layers-list');
+                    var originalHeight = layersListElement.style.height 
+                        || window.getComputedStyle(layersListElement).height;
+                    var newHeight = parseFloat(originalHeight) - 50;
+                    layersListElement.style.height = newHeight + 'px';
+                }
+            }
+            var isLayersListExpanded = true;
+            var controlLayersElement = document.querySelector('.leaflet-control-layers');
+            var toggleLayerControl = document.querySelector('.leaflet-control-layers-toggle');
+            // toggle Collapsed/Expanded and apply new Layers List height
+            toggleLayerControl.addEventListener('click', function() {
+                if (isLayersListExpanded) {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                } else {
+                    controlLayersElement.classList.add('leaflet-control-layers-expanded');
+                }
+                isLayersListExpanded = !isLayersListExpanded;
+                newLayersListHeight()
+            });	
+			// apply new Layers List height if toggle layerstree
+			if (controlLayersElement) {
+				controlLayersElement.addEventListener('click', function(event) {
+					var toggleLayerHeaderPointer = event.target.closest('.leaflet-layerstree-header-pointer span');
+					if (toggleLayerHeaderPointer) {
+						newLayersListHeight();
+					}
+				});
+			}
+            // Collapsed/Expanded at Start to apply new height
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            // Collapsed touch/small screen
+            var isSmallScreen = window.innerWidth < 650;
+            if (isSmallScreen) {
+                setTimeout(function() {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                    isLayersListExpanded = !isLayersListExpanded;
+                }, 500);
+            }  
+        });       
+        setBounds();
+        L.ImageOverlay.include({
+            getBounds: function () {
+                return this._bounds;
+            }
+        });
+        
+        // ===== CODE DU CURSEUR TEMPOREL =====
+        // Configuration des années et des couches
+        var years = [1990, 2001, 2006, 2015, 2017, 2018, 2019, 2020, 2021, 2022, 2023];
+        var heatmapLayers = [
+            layer_HeatMap1990_12,
+            layer_HeatMap2001_11,
+            layer_HeatMap2006_10,
+            layer_HeatMap2015_9,
+            layer_HeatMap2017_8,
+            layer_HeatMap2018_7,
+            layer_HeatMap2019_6,
+            layer_HeatMap2020_5,
+            layer_HeatMap2021_4,
+            layer_HeatMap2022_3,
+            layer_HeatMap2023_2
+        ];
+        
+        var currentIndex = 0;
+        var isPlaying = false;
+        var playInterval;
+        
+        // Fonction pour mettre à jour l'affichage
+        function updateTimelineDisplay(index) {
+            currentIndex = index;
+            var year = years[index];
+            document.getElementById('year-display').textContent = year;
+            document.getElementById('timeline-slider').value = index;
+            
+            // Masquer toutes les couches HeatMap
+            heatmapLayers.forEach(function(layer) {
+                if (map.hasLayer(layer)) {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            // Afficher uniquement la couche sélectionnée
+            if (!map.hasLayer(heatmapLayers[index])) {
+                map.addLayer(heatmapLayers[index]);
+            }
+            
+            // Mettre à jour les boutons
+            document.getElementById('prev-button').disabled = (index === 0);
+            document.getElementById('next-button').disabled = (index === years.length - 1);
+            
+            // Mettre à jour la ligne verticale sur le graphique
+            updateChartVerticalLine(index);
+        }
+        
+        // Gestionnaire du curseur
+        document.getElementById('timeline-slider').addEventListener('input', function(e) {
+            if (isPlaying) {
+                stopAnimation();
+            }
+            updateTimelineDisplay(parseInt(e.target.value));
+        });
+        
+        // Bouton précédent
+        document.getElementById('prev-button').addEventListener('click', function() {
+            if (currentIndex > 0) {
+                if (isPlaying) {
+                    stopAnimation();
+                }
+                updateTimelineDisplay(currentIndex - 1);
+            }
+        });
+        
+        // Bouton suivant
+        document.getElementById('next-button').addEventListener('click', function() {
+            if (currentIndex < years.length - 1) {
+                if (isPlaying) {
+                    stopAnimation();
+                }
+                updateTimelineDisplay(currentIndex + 1);
+            }
+        });
+        
+        // Animation automatique
+        function startAnimation() {
+            isPlaying = true;
+            document.getElementById('play-button').textContent = '⏸ Pause';
+            
+            playInterval = setInterval(function() {
+                if (currentIndex < years.length - 1) {
+                    updateTimelineDisplay(currentIndex + 1);
+                } else {
+                    updateTimelineDisplay(0);
+                }
+            }, 1500);
+        }
+        
+        function stopAnimation() {
+            isPlaying = false;
+            document.getElementById('play-button').textContent = '▶ Lecture auto';
+            if (playInterval) {
+                clearInterval(playInterval);
+            }
+        }
+        
+        // Bouton play/pause
+        document.getElementById('play-button').addEventListener('click', function() {
+            if (isPlaying) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        });
+        
+        // Initialiser avec la première année
+        updateTimelineDisplay(0);
+        // ===== FIN DU CODE DU CURSEUR TEMPOREL =====
+        </script>        
     </body>
 </html>
